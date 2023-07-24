@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Subtitle Sync</title>
+    <style>
+      div {
+        margin: 1em;
+      }
+    </style>
+  </head>
+  <body>
+    <form data-form>
+      <div>
+        <label>Select .ass or .srt files</label>
+        <input type="file" accept=".ass,.srt" multiple />
+      </div>
+      <div>
+        <label>Shift (in milliseconds)</label>
+        <input type="number" value="1000" />
+      </div>
+      <div>
+        <button type="button">Sync</button>
+      </div>
+    </form>
+    <a download hidden data-download />
+
+    <script src="./web_modules/jszip.min.js"></script>
+    <script type="module">
+      import { shift, download } from "./src/main.mjs"
+
+      document.addEventListener("DOMContentLoaded", function () {
+        const [$source, $ms, $sync] = document.querySelector("[data-form]").elements
+
+        $sync.addEventListener("click", async () => {
+          const { files = [] } = $source
+          if (!files.length) return
+
+          const zip = new JSZip()
+          for (let file of files) {
+            const content = await file.text()
+            zip.file(file.name, shift(content, $ms.valueAsNumber))
+          }
+
+          const blob = await zip.generateAsync({ type: "blob" })
+          download(blob, `Subs ${$ms.value}.zip`)
+        })
+      })
+    </script>
+  </body>
+</html>
